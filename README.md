@@ -2,11 +2,11 @@
 
 A classifier that predicts how full a Thai Post truck's cargo space is, from a single camera image, using a DINOv3 ViT-S/16+ backbone with an optional Dual Attention head.
 
-The model produces one of six fill-level classes:
+The model produces one of six empty-level classes:
 
-| Index | Class folder | Fill level | Plot label |
+| Index | Class folder | Empty level | Plot label |
 |-------|--------------|------------|------------|
-| 0 | `0 _` | 0% (empty) | `0 (6)` |
+| 0 | `0 _` | 0% | `0 (6)` |
 | 1 | `1-20 _` | 1–20% | `1-20 (5)` |
 | 2 | `21-40 _` | 21–40% | `21-40 (4)` |
 | 3 | `41-60 _` | 41–60% | `41-60 (3)` |
@@ -28,12 +28,9 @@ thaipost-dino/
 ├── models/
 │   └── network.py              Network — DINOv3 backbone + optional DAM + classifier head
 ├── datasets/
-│   ├── cargo.py                CargoSpaceDataset (labeled) + CLASS_NAMES / PLOT_CLASS_NAMES
-│   └── unlabeled.py            UnlabeledCargoDataset (recursive image walker)
+│   └── cargo.py                CargoSpaceDataset (labeled) + CLASS_NAMES / PLOT_CLASS_NAMES
 ├── transforms/
 │   └── night_vision.py         SimulateNightVision — grayscale + contrast + noise
-├── utils/
-│   └── visualization.py        denormalize — reverse ImageNet normalization for plotting
 ├── checkpoints/                Trained .pth weights (created by training script)
 ├── dinov3_training.py          Train the classifier
 └── dinov3_evaluation.py        Evaluate on the labeled test split (+ optional visualization)
