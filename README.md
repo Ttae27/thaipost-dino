@@ -24,7 +24,7 @@ thaipost-dino/
 │   ├── channel.py              ChannelAttentionModule (channel-wise attention)
 │   └── dual.py                 DualAttentionModule (PAM + CAM, concatenated)
 ├── loss/
-│   └── cdb.py                  CDB_loss — class-difficulty balanced cross-entropy
+│   └── cdb.py                  CDB_loss — fix imbalance problem
 ├── models/
 │   └── network.py              Network — DINOv3 backbone + optional DAM + classifier head
 ├── datasets/
@@ -234,21 +234,15 @@ Outputs:
 
 ---
 
-## Typical workflow
+## Architecture
 
-1. Organize your labeled images under `Cargo space/` per the layout above.
-2. Train a baseline: `uv run .\dinov3_training.py -d 1 -a none -l ce`
-3. Compare with the attention + CDB variant: `uv run .\dinov3_training.py -d 1 -a dam -l cdb`
-4. Evaluate the best checkpoint with visualization to inspect failures:
-   ```powershell
-   uv run .\dinov3_evaluation.py -w best_model_data1_dam_cdb_v2_aug.pth -d 1 -a dam --save_vis --vis_max_correct 0
-   ```
-5. Open `predict/false/class N/` to see what the model gets wrong per class.
+### Current Best
 
----
+DINOv3 backbone → linear classifier → CDB loss.
 
-## Notes & gotchas
+![Current architecture](fig/old.jpg)
 
-- Checkpoint filenames embed the split (`data{D}`), attention (`dam`/`none`), and loss (`cdb`/`ce`) — the evaluation script does **not** verify these match the `-d`/`-a` you pass, so make sure the flags match the trained architecture or `load_state_dict` will fail.
-- The backbone is `facebook/dinov3-vits16plus-pretrain-lvd1689m` (set in [models/network.py](models/network.py)). First run downloads weights via `transformers`.
-- Inside [datasets/cargo.py](datasets/cargo.py) the variable names `front_dir` and `back_dir` are assigned to the Thai folder names in reverse — purely cosmetic, the labels and samples are still correct.
+### Next experiment — regression head
+
+
+![Experimental architecture with regression head](fig/expt.jpg)
