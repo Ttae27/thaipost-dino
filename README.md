@@ -241,5 +241,41 @@ DINOv3 backbone → linear classifier → CDB loss.
 
 ### Next experiment — regression head
 
-
 ![Experimental architecture with regression head](fig/expt.jpg)
+
+
+**1. Pure regression head**
+
+Delete the linear classifier head and replace it with a regression head that outputs one scalar fill-percentage.
+
+```
+backbone (B, C, H, W)
+   ↓  (DAM) → GAP → flatten
+feat (B, in_chan)
+   ↓  reg_head: Linear → ReLU → Linear(reg_hidden, 1)
+value (B,) 
+```
+
+**2. Concat: backbone feature + classifier logits → regression**
+
+Keep the existing linear classifier head, then concatenate the pooled backbone feature with the classifier's 6 logits and feed the joint vector into a regression head. The classifier provides a class-prior signal that the regression head can refine.
+
+```
+backbone (B, C, H, W)
+   ↓  (DAM) → GAP → flatten
+pooled (B, in_chan)
+   ↓  fc → LayerNorm
+logits (B, 6)
+   ↓  concat([pooled, logits])
+joint (B, in_chan + 6)
+   ↓  reg_head: Linear → ReLU → Linear(reg_hidden, 1)
+value (B,)   # continuous fill % — clamp to [0, 100] at inference
+```
+
+Forward returns `(logits, value)`. Joint loss:
+
+```python
+loss = ce_or_cdb(logits, labels) + alpha * l1_loss(value, percentage_targets)
+```
+
+
