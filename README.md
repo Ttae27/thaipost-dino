@@ -256,9 +256,13 @@ feat (B, in_chan)
 value (B,) 
 ```
 
-**2. Concat: backbone feature + classifier logits → regression**
+**2. Classifier head → regression**
 
-Keep the existing linear classifier head, then concatenate the pooled backbone feature with the classifier's 6 logits and feed the joint vector into a regression head. The classifier provides a class-prior signal that the regression head can refine.
+Keep the existing linear classifier head and feed its output into a regression head. The classifier provides a class-prior signal that the regression head refines into a continuous value. Two variants depending on whether backbone features are also passed through:
+
+**2a. With backbone feature (concat)**
+
+Concatenate the pooled backbone feature with the classifier's 6 logits and feed the joint vector into the regression head. Richer input — regression sees both the raw representation and the class signal.
 
 ```
 backbone (B, C, H, W)
@@ -269,10 +273,24 @@ logits (B, 6)
    ↓  concat([pooled, logits])
 joint (B, in_chan + 6)
    ↓  reg_head: Linear → ReLU → Linear(reg_hidden, 1)
-value (B,)   # continuous fill % — clamp to [0, 100] at inference
+value (B,)
 ```
 
-Forward returns `(logits, value)`. Joint loss:
+**2b. Logits only (no backbone feature)**
+
+Skip the concat — feed only the 6 classifier logits into the regression head. Much smaller regression head (`6 → reg_hidden → 1`), and the regression is forced to use the classifier's decision as its sole evidence. Useful as an ablation, or when you want the regression to be a "soft" interpolation between the 6 class predictions.
+
+```
+backbone (B, C, H, W)
+   ↓  (DAM) → GAP → flatten
+pooled (B, in_chan)
+   ↓  fc → LayerNorm
+logits (B, 6)
+   ↓  reg_head: Linear(6, reg_hidden) → ReLU → Linear(reg_hidden, 1)
+value (B,)
+```
+
+Both variants: forward returns `(logits, value)`. Joint loss:
 
 ```python
 loss = ce_or_cdb(logits, labels) + alpha * l1_loss(value, percentage_targets)
