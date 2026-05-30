@@ -278,7 +278,7 @@ value (B,)
 
 **2b. Logits only (no backbone feature)**
 
-Skip the concat — feed only the 6 classifier logits into the regression head. Much smaller regression head (`6 → reg_hidden → 1`), and the regression is forced to use the classifier's decision as its sole evidence. Useful as an ablation, or when you want the regression to be a "soft" interpolation between the 6 class predictions.
+Skip the concat — feed only the 6 classifier logits into the regression head. Much smaller regression head (`6 → reg_hidden → 1`), and the regression is forced to use the classifier's decision as its sole evidence.
 
 ```
 backbone (B, C, H, W)
